@@ -125,7 +125,7 @@
             </a>
         <?php else: ?>
             <script>
-                function foursquareRegistration() {
+                function registration() {
                     var xhttp;
                     if (window.XMLHttpRequest) {
                         xhttp = new XMLHttpRequest();
@@ -140,7 +140,7 @@
                         }
                     };
                     
-                    xhttp.open("POST", "api.php?event=foursquare_registration", true);
+                    xhttp.open("POST", "api.php?event=registration", true);
                     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                     var data = {
                         client_id: document.getElementById("client_id").value,
@@ -162,7 +162,7 @@
             Account SID: <input id="account_sid" type="text"><br><br>
             Auth Token: <input id="auth_token" type="text"><br><br>
             Phone: <input id="phone" type="text"><br><br>
-            <button onClick="foursquareRegistration()">Done</button>
+            <button onClick="registration()">Done</button>
         <?php endif; ?>
     </body>
 </html>

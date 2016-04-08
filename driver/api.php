@@ -35,8 +35,8 @@
     
     if (isset($_GET['event'])) {
         switch ($_GET['event']) {
-            case 'foursquare_registration':
-                if (!isset($post['client_id']) || !isset($post['client_secret']))
+            case 'registration':
+                if (!isset($post['client_id']) || !isset($post['client_secret']) || !isset($post['account_sid']) || !isset($post['auth_token']) || !isset($post['phone']))
                     break;
                 
                 $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
