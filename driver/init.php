@@ -33,4 +33,6 @@
     $conn->query('INSERT INTO oauth () VALUES ()');
     
     $conn->close();
+    
+    header('Location: index.php');
 ?>
