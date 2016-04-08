@@ -25,7 +25,10 @@
     $conn->query('CREATE TABLE oauth(
         id INTEGER PRIMARY KEY DEFAULT 0,
         client_id VARCHAR(60) NOT NULL,
-        client_secret VARCHAR(60) NOT NULL
+        client_secret VARCHAR(60) NOT NULL,
+        account_sid VARCHAR(60) NOT NULL,
+        auth_token VARCHAR(60) NOT NULL,
+        phone VARCHAR(20) NOT NULL
     )');
     $conn->query('INSERT INTO oauth () VALUES ()');
     

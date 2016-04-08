@@ -35,8 +35,8 @@
                 
                 $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
 
-                $stmt = $conn->prepare('UPDATE oauth SET client_id = ?, client_secret = ?');
-                $stmt->bind_param('ss', $post['client_id'], $post['client_secret']);
+                $stmt = $conn->prepare('UPDATE oauth SET client_id = ?, client_secret = ?, account_sid = ?, auth_token = ?, phone = ?');
+                $stmt->bind_param('sssss', $post['client_id'], $post['client_secret'], $post['account_sid'], $post['auth_token'], $post['phone']);
                 $stmt->execute();
                 $stmt->close();
                 
@@ -95,6 +95,11 @@
                 $driver = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
                 
+                $stmt = $conn->prepare('SELECT * FROM oauth');
+                $stmt->execute();
+                $oauth = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                
                 $conn->close();
                 
                 $distance = distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($driver['latitude']), floatval($driver['longitude']));
@@ -112,7 +117,23 @@
                     curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
                     curl_exec($curl);
                     curl_close($curl);
+                    
+                    $text_content = 'Bid made automatically';
                 }
+                else {
+                    $text_content = 'Make bid anyway?';
+                }
+                
+                $curl = curl_init('https://api.twilio.com/2010-04-01/Accounts/' . $oauth['account_sid'] . '/Messages.json');
+                curl_setopt($curl, CURLOPT_HEADER, false);
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/x-www-form-urlencoded'));
+                curl_setopt($curl, CURLOPT_POST, true);
+                curl_setopt($curl, CURLOPT_POSTFIELDS, 'From=' . $oauth['phone'] . '&To=' . $driver['phone'] . '=&Body=' . urlencode($text_content));
+                curl_setopt($curl, CURLOPT_USERPWD, $oauth['account_sid'] . ':' . $oauth['auth_token']);
+                curl_exec($curl);
+                curl_close($curl);
                 
                 echo 'delivery is ready';
                 break;

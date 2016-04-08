@@ -11,7 +11,7 @@
     $conn->close();
     
     $registered = true;
-    if ($oauth['client_id'] === '' || $oauth['client_secret'] === '')
+    if ($oauth['client_id'] === '' || $oauth['client_secret'] === '' || $oauth['account_sid'] === '' || $oauth['auth_token'] === '' || $oauth['phone'] === '')
         $registered = false;
     else if (isset($_GET['code'])) {
         $code = $_GET['code'];
@@ -144,14 +144,22 @@
                     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                     var data = {
                         client_id: document.getElementById("client_id").value,
-                        client_secret: document.getElementById("client_secret").value
+                        client_secret: document.getElementById("client_secret").value,
+                        account_sid: document.getElementById("account_sid").value,
+                        auth_token: document.getElementById("auth_token").value,
+                        phone: document.getElementById("phone").value
                     };
                     xhttp.send(JSON.stringify(data));
                 }
             </script>
-            
+            Foursquare:<br>
             Client ID: <input id="client_id" type="text"><br><br>
             Client Secret: <input id="client_secret" type="text"><br><br>
+            
+            Twilio:<br>
+            Account SID: <input id="account_sid" type="text"><br><br>
+            Auth Token: <input id="auth_token" type="text"><br><br>
+            Phone: <input id="phone" type="text"><br><br>
             <button onClick="foursquareRegistration()">Done</button>
         <?php endif; ?>
     </body>
