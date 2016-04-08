@@ -10,7 +10,10 @@
     
     $conn->close();
     
-    if (isset($_GET['code'])) {
+    $registered = true;
+    if ($oauth['client_id'] === '' || $oauth['client_secret'] === '')
+        $registered = false;
+    else if (isset($_GET['code'])) {
         $code = $_GET['code'];
         
         // Initialize session and set URL.
@@ -74,48 +77,82 @@
         <title>Driver</title>
     </head>
     <body>
-        <script>
-            function savePhone() {
-                var xhttp;
-                if (window.XMLHttpRequest) {
-                    xhttp = new XMLHttpRequest();
-                } else {
-                    // code for IE6, IE5
-                    xhttp = new ActiveXObject("Microsoft.XMLHTTP");
-                }
-                xhttp.open("POST", "api.php?event=change_phone", true);
-                xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                var data = {phone: document.getElementById("phone").value};
-                xhttp.send(JSON.stringify(data));
-            }
-        </script>
-        
-        <?php
-            $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
-            
-            $stmt = $conn->prepare('SELECT * FROM driver');
-            $stmt->execute();
-            $driver = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-            
-            $conn->close();
-            
-            if ($driver['name'] !== '') {
-                echo 'Name: ' . $driver['name'] . '<br>';
-                echo 'Phone: <input id="phone" type="text" value="' . $driver['phone'] . '"><button onClick="savePhone()">Save</button><br><br>';
-                echo 'Last location:<br>';
-                echo 'Latitude: ' . $driver['latitude'] . '<br>';
-                echo 'Longitude: ' . $driver['longitude'] . '<br><br>';
-            }
-        ?>
-        
-        <a href="https://foursquare.com/oauth2/authenticate?client_id=<?php echo $oauth['client_id']; ?>&response_type=code&redirect_uri=<?php echo urlencode($url); ?>">
+        <?php if($registered === true): ?>
             <?php
-                if ($driver['name'] !== '')
-                    echo 'Register different user or update current user';
-                else
-                    echo 'Register user';
+                $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
+                
+                $stmt = $conn->prepare('SELECT * FROM driver');
+                $stmt->execute();
+                $driver = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                
+                $conn->close();
+                
+                if ($driver['name'] !== '') {
+                    echo 'Name: ' . $driver['name'] . '<br>';
+                    echo 'Phone: <input id="phone" type="text" value="' . $driver['phone'] . '"><button onClick="savePhone()">Save</button><br><br>';
+                    echo 'Last location:<br>';
+                    echo 'Latitude: ' . $driver['latitude'] . '<br>';
+                    echo 'Longitude: ' . $driver['longitude'] . '<br><br>';
+                }
             ?>
-        </a>
+            
+            <script>
+                function savePhone() {
+                    var xhttp;
+                    if (window.XMLHttpRequest) {
+                        xhttp = new XMLHttpRequest();
+                    } else {
+                        // code for IE6, IE5
+                        xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+                    }
+                    xhttp.open("POST", "api.php?event=change_phone", true);
+                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    var data = {
+                        phone: document.getElementById("phone").value
+                    };
+                    xhttp.send(JSON.stringify(data));
+                }
+            </script>
+            
+            <a href="https://foursquare.com/oauth2/authenticate?client_id=<?php echo $oauth['client_id']; ?>&response_type=code&redirect_uri=<?php echo urlencode($url); ?>">
+                <?php
+                    if ($driver['name'] !== '')
+                        echo 'Register different user or update current user';
+                    else
+                        echo 'Register user';
+                ?>
+            </a>
+        <?php else: ?>
+            <script>
+                function foursquareRegistration() {
+                    var xhttp;
+                    if (window.XMLHttpRequest) {
+                        xhttp = new XMLHttpRequest();
+                    } else {
+                        // code for IE6, IE5
+                        xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+                    }
+                    
+                    xhttp.onreadystatechange = function() {
+                        if (xhttp.readyState == 4 && xhttp.status >= 200 && xhttp.status < 300) {
+                            location.reload();
+                        }
+                    };
+                    
+                    xhttp.open("POST", "api.php?event=foursquare_registration", true);
+                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    var data = {
+                        client_id: document.getElementById("client_id").value,
+                        client_secret: document.getElementById("client_secret").value
+                    };
+                    xhttp.send(JSON.stringify(data));
+                }
+            </script>
+            
+            Client ID: <input id="client_id" type="text"><br><br>
+            Client Secret: <input id="client_secret" type="text"><br><br>
+            <button onClick="foursquareRegistration()">Done</button>
+        <?php endif; ?>
     </body>
 </html>
