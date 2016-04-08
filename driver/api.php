@@ -97,19 +97,22 @@
                 
                 $conn->close();
                 
-                $content = json_encode(array(
-                    'event' => 'bid_available',
-                    'driver_name' => 'Josh',
-                    'estimated_time' => distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($driver['latitude']), floatval($driver['longitude']))
-                ));
-                $curl = curl_init($url);
-                curl_setopt($curl, CURLOPT_HEADER, false);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-                curl_setopt($curl, CURLOPT_POST, true);
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
-                curl_exec($curl);
-                curl_close($curl);
+                $distance = distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($driver['latitude']), floatval($driver['longitude']));
+                if ($distance <= $max_miles) {
+                    $content = json_encode(array(
+                        'event' => 'bid_available',
+                        'driver_name' => $driver['name'],
+                        'estimated_time' => $distance * 2
+                    ));
+                    $curl = curl_init($url);
+                    curl_setopt($curl, CURLOPT_HEADER, false);
+                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+                    curl_setopt($curl, CURLOPT_POST, true);
+                    curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
+                    curl_exec($curl);
+                    curl_close($curl);
+                }
                 
                 echo 'delivery is ready';
                 break;
