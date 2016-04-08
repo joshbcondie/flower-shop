@@ -1,5 +1,7 @@
 <?php
+    $url = 'https://' . $_SERVER['HTTP_HOST'] . strtok($_SERVER["REQUEST_URI"], '?');
     $max_miles = 5;
+    $mph = 30;
     $post = json_decode(file_get_contents('php://input'), true);
     
     function distance($latitude1, $longitude1, $latitude2, $longitude2) {
@@ -25,6 +27,10 @@
             $vars[$name] = $value;
         }
         return $vars;
+    }
+    
+    function generateRandomString($length = 10) {
+        return substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, $length);
     }
     
     if (isset($_GET['event'])) {
@@ -77,15 +83,13 @@
                 echo 'new location';
                 break;
             case 'delivery_ready':
-                if (!isset($post['url']))
+                if (!isset($post['id']) || !isset($post['address']) || !isset($post['latitude']) || !isset($post['longitude']))
                     break;
-                
-                $url = $post['url'];
                 
                 $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
 
-                $stmt = $conn->prepare('SELECT * FROM shop WHERE url = ?');
-                $stmt->bind_param('s', $url);
+                $stmt = $conn->prepare('SELECT * FROM shop WHERE id = ?');
+                $stmt->bind_param('s', $_GET['shop_id']);
                 $stmt->execute();
                 $shop = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
@@ -102,14 +106,24 @@
                 
                 $conn->close();
                 
-                $distance = distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($driver['latitude']), floatval($driver['longitude']));
-                if ($distance <= $max_miles) {
+                $distance_to_shop = distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($driver['latitude']), floatval($driver['longitude']));
+                $distance_to_recipient = distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($post['latitude']), floatval($post['longitude']));
+                $distance = $distance_to_shop + $distance_to_recipient;
+                $estimated_time = round($distance * 60 / $mph, 2);
+                
+                $text_content = 'Flower shop: ' . $shop['name'] . "\n";
+                $text_content .= 'Address: ' . $shop['address'] . "\n";
+                $text_content .= 'Recipient address: ' . $post['address'] . "\n";
+                $text_content .= 'Distance: ' . round($distance, 2) . " miles\n";
+                $text_content .= 'Estimated time: ' . $estimated_time . " minutes\n";
+                
+                if ($distance_to_shop <= $max_miles) {
                     $content = json_encode(array(
                         'event' => 'bid_available',
                         'driver_name' => $driver['name'],
-                        'estimated_time' => $distance * 2
+                        'estimated_time' => $estimated_time
                     ));
-                    $curl = curl_init($url);
+                    $curl = curl_init($shop['url']);
                     curl_setopt($curl, CURLOPT_HEADER, false);
                     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
@@ -118,10 +132,10 @@
                     curl_exec($curl);
                     curl_close($curl);
                     
-                    $text_content = 'Bid made automatically';
+                    $text_content .= 'Bid made automatically';
                 }
                 else {
-                    $text_content = 'Make bid anyway?';
+                    $text_content .= 'Make bid anyway?';
                 }
                 
                 $curl = curl_init('https://api.twilio.com/2010-04-01/Accounts/' . $oauth['account_sid'] . '/Messages.json');
@@ -138,19 +152,23 @@
                 echo 'delivery is ready';
                 break;
             case 'new_flower_shop':
-                if (!isset($post['name']) || !isset($post['latitude']) || !isset($post['longitude']) || !isset($post['url']))
+                if (!isset($post['name']) || !isset($post['address']) || !isset($post['latitude']) || !isset($post['longitude']) || !isset($post['url']))
                     break;
                 
                 $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
                 
-                $stmt = $conn->prepare('INSERT INTO shop (name, latitude, longitude, url) VALUES (?, ?, ?, ?)');
-                $stmt->bind_param('sdds', $post['name'], $post['latitude'], $post['longitude'], $post['url']);
+                $stmt = $conn->prepare('INSERT INTO shop (id, name, address, latitude, longitude, url) VALUES (?, ?, ?, ?, ?, ?)');
+                $id = generateRandomString();
+                $stmt->bind_param('sssdds', $id, $post['name'], $post['address'], $post['latitude'], $post['longitude'], $post['url']);
                 $stmt->execute();
                 $stmt->close();
                 
                 $conn->close();
                 
-                echo 'new flower shop';
+                $result = json_encode(array(
+                    'esl' => $url . '?event=delivery_ready&shop_id=' . $id
+                ));
+                echo $result;
                 break;
             case 'bid_awarded':
                 echo 'new flower shop';

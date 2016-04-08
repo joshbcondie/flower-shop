@@ -6,7 +6,9 @@
     $conn->query('DROP TABLE IF EXISTS oauth');
     
     $conn->query('CREATE TABLE shop (
-        name VARCHAR(100) PRIMARY KEY,
+        id VARCHAR(10) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        address VARCHAR(200) NOT NULL,
         latitude DECIMAL(23, 20) NOT NULL,
         longitude DECIMAL(23, 20) NOT NULL,
         url VARCHAR(600) UNIQUE NOT NULL
