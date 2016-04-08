@@ -90,8 +90,8 @@
                 
                 if ($driver['name'] !== '') {
                     echo 'Name: ' . $driver['name'] . '<br>';
-                    echo 'Phone: <input id="phone" type="text" value="' . $driver['phone'] . '"><button onClick="savePhone()">Save</button><br><br>';
-                    echo 'Last location:<br>';
+                    echo 'Phone: <input id="phone" type="text" value="' . $driver['phone'] . '"><button onClick="savePhone()">Save</button>';
+                    echo '<h4>Last location:</h4>';
                     echo 'Latitude: ' . $driver['latitude'] . '<br>';
                     echo 'Longitude: ' . $driver['longitude'] . '<br><br>';
                 }
@@ -113,16 +113,59 @@
                     };
                     xhttp.send(JSON.stringify(data));
                 }
+                
+                function newFlowerShop() {
+                    var xhttp;
+                    if (window.XMLHttpRequest) {
+                        xhttp = new XMLHttpRequest();
+                    } else {
+                        // code for IE6, IE5
+                        xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+                    }
+                    
+                    xhttp.onreadystatechange = function() {
+                        if (xhttp.readyState == 4 && xhttp.status >= 200 && xhttp.status < 300) {
+                            var name = document.getElementById("name").value;
+                            var url = document.getElementById("url").value;
+                            var esl = JSON.parse(xhttp.responseText).esl;
+                            document.body.innerHTML += "<br><br>" + name + "(" + url + "): " + esl;
+                            document.getElementById("name").value = "";
+                            document.getElementById("address").value = "";
+                            document.getElementById("latitude").value = "";
+                            document.getElementById("longitude").value = "";
+                            document.getElementById("url").value = "";
+                        }
+                    };
+                    
+                    xhttp.open("POST", "api.php?event=new_flower_shop", true);
+                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    var data = {
+                        name: document.getElementById("name").value,
+                        address: document.getElementById("address").value,
+                        latitude: document.getElementById("latitude").value,
+                        longitude: document.getElementById("longitude").value,
+                        url: document.getElementById("url").value
+                    };
+                    xhttp.send(JSON.stringify(data));
+                }
             </script>
             
-            <a href="https://foursquare.com/oauth2/authenticate?client_id=<?php echo $oauth['client_id']; ?>&response_type=code&redirect_uri=<?php echo urlencode($url); ?>">
+            <br><a href="https://foursquare.com/oauth2/authenticate?client_id=<?php echo $oauth['client_id']; ?>&response_type=code&redirect_uri=<?php echo urlencode($url); ?>">
                 <?php
                     if ($driver['name'] !== '')
                         echo 'Register different user or update current user';
                     else
                         echo 'Register user';
                 ?>
-            </a>
+            </a><br><br>
+            
+            <h4>Register a new flower shop:</h4>
+            Name: <input id="name" type="text"><br><br>
+            Address: <input id="address" type="text"><br><br>
+            Latitude: <input id="latitude" type="text"><br><br>
+            Longitude: <input id="longitude" type="text"><br><br>
+            URL: <input id="url" type="text"><br><br>
+            <button onClick="newFlowerShop()">Register</button>
         <?php else: ?>
             <script>
                 function registration() {
