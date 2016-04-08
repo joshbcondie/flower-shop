@@ -153,6 +153,8 @@
                 }
             </script>
             Foursquare:<br>
+            "Download / welcome page url" and "Redirect URI(s)" should both be <?php echo $url; ?><br>
+            "Push url" should be <?php echo str_replace('index.php', 'api.php?event=new_location', $url); ?><br>
             Client ID: <input id="client_id" type="text"><br><br>
             Client Secret: <input id="client_secret" type="text"><br><br>
             
