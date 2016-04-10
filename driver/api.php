@@ -35,6 +35,33 @@
     
     if (isset($_GET['event'])) {
         switch ($_GET['event']) {
+            case 'new_text':
+                $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
+                
+                $stmt = $conn->prepare('SELECT * FROM driver');
+                $stmt->execute();
+                $driver = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                
+                $conn->close();
+                
+                if (strcasecmp(trim($_POST['Body']), "bid anyway") === 0) {
+                    $content = json_encode(array(
+                        'event' => 'bid_available',
+                        'delivery_id' => $driver['last_delivery_id'],
+                        'driver_name' => $driver['name'],
+                        'estimated_time' => floatval($driver['last_estimated_time'])
+                    ));
+                    $curl = curl_init($driver['last_shop_url']);
+                    curl_setopt($curl, CURLOPT_HEADER, false);
+                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+                    curl_setopt($curl, CURLOPT_POST, true);
+                    curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
+                    curl_exec($curl);
+                    curl_close($curl);
+                }
+                break;
             case 'registration':
                 if (!isset($post['client_id']) || !isset($post['client_secret']) || !isset($post['account_sid']) || !isset($post['auth_token']) || !isset($post['phone']))
                     break;
@@ -120,6 +147,7 @@
                 if ($distance_to_shop <= $max_miles) {
                     $content = json_encode(array(
                         'event' => 'bid_available',
+                        'delivery_id' => $post['id'],
                         'driver_name' => $driver['name'],
                         'estimated_time' => $estimated_time
                     ));
@@ -135,7 +163,16 @@
                     $text_content .= 'Bid made automatically';
                 }
                 else {
-                    $text_content .= 'Make bid anyway?';
+                    $text_content .= 'Bid anyway?';
+                    
+                    $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
+                    
+                    $stmt = $conn->prepare('UPDATE driver SET last_delivery_id = ?, last_shop_url = ?, last_estimated_time = ?');
+                    $stmt->bind_param('ssd', $post['id'], $shop['url'], $estimated_time);
+                    $stmt->execute();
+                    $stmt->close();
+                    
+                    $conn->close();
                 }
                 
                 $curl = curl_init('https://api.twilio.com/2010-04-01/Accounts/' . $oauth['account_sid'] . '/Messages.json');
