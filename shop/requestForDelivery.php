@@ -5,15 +5,15 @@
  * Date: 4/11/2016
  * Time: 8:32 AM
  */
-require_once("config/settings.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . '/flower-shop/config/settings.php');
 
 ?>
 
 <html>
 <body>
-<form action="shop/api/create_delivery_request">
-    <label>Order: <input type="text"></label>
-    <label>Address: <input type="text"></label>
+<form method="post" action="processForms.php?form=create_delivery_request">
+    <label>Order: <input name="order" type="text"></label>
+    <label>Address: <input name="address" type="text"></label>
     <input type="submit" value="Register">
 </form>
 </body>

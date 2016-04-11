@@ -35,25 +35,7 @@ class ShopAPI extends API
 //        $this->User = $User;
     }
 
-
-    protected function register_deliver()
-    {
-        if ($this->method == 'POST') {
-            return "POST " . print_r($this->request, true);
-        } else if ($this->method == 'GET') {
-            return "GET " . print_r($this->request, true);
-        }
-    }
-
-    protected function create_delivery_request()
-    {
-        if ($this->method == 'POST') {
-            return "POST " . print_r($this->request, true);
-        } else if ($this->method == 'GET') {
-            return "GET " . print_r($this->request, true);
-        }
-    }
-
+    
     protected function deliver_ready()
     {
         if ($this->method == 'POST') {
