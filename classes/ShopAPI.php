@@ -36,7 +36,7 @@ class ShopAPI extends API
     }
 
 
-    protected function registerESL()
+    protected function register_deliver()
     {
         if ($this->method == 'POST') {
             return "POST " . print_r($this->request, true);
@@ -45,7 +45,25 @@ class ShopAPI extends API
         }
     }
 
-    protected function createDeliveryRequest()
+    protected function create_delivery_request()
+    {
+        if ($this->method == 'POST') {
+            return "POST " . print_r($this->request, true);
+        } else if ($this->method == 'GET') {
+            return "GET " . print_r($this->request, true);
+        }
+    }
+
+    protected function deliver_ready()
+    {
+        if ($this->method == 'POST') {
+            return "POST " . print_r($this->request, true);
+        } else if ($this->method == 'GET') {
+            return "GET " . print_r($this->request, true);
+        }
+    }
+
+    protected function bid_available()
     {
         if ($this->method == 'POST') {
             return "POST " . print_r($this->request, true);
