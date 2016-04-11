@@ -5,6 +5,9 @@
  * Date: 4/9/2016
  * Time: 10:29 AM
  */
+
+require_once("config/settings.php");
+
 // Requests from the same server don't have a HTTP_ORIGIN header
 if (!array_key_exists('HTTP_ORIGIN', $_SERVER)) {
 
