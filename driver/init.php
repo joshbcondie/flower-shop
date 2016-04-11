@@ -20,7 +20,10 @@
         phone VARCHAR(20) NOT NULL,
         latitude DECIMAL(23, 20) NOT NULL DEFAULT 40.244444,
         longitude DECIMAL(23, 20) NOT NULL DEFAULT -111.660833,
-        token VARCHAR(60) NOT NULL
+        token VARCHAR(60) NOT NULL,
+        last_delivery_id VARCHAR(60) NOT NULL,
+        last_shop_url VARCHAR(600) NOT NULL,
+        last_estimated_time DECIMAL(7, 2) NOT NULL
     )');
     $conn->query('INSERT INTO driver () VALUES ()');
     
