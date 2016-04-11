@@ -14,11 +14,21 @@ echo $form();
 
 function register_deliver()
 {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        return "POST " . print_r($_POST, true);
-    } else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        return "GET " . print_r($_GET, true);
-    }
+//    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+//        return "POST " . print_r($_POST, true);
+//    } else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+//        return "GET " . print_r($_GET, true);
+//    }
+
+    $esl = $_REQUEST['ESL'];
+
+    $insertEslQuery = 'INSERT INTO driver(ESL) VALUES(:ESL)';
+    $stmt = Database::getDB()->prepare($insertEslQuery);
+    $stmt->bindValue('ESL', $esl);
+    $stmt->execute();
+    $driverId = Database::getDB()->lastInsertId();
+
+    return $driverId;
 }
 
 function create_delivery_request()
