@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Apr 11, 2016 at 04:30 PM
+-- Generation Time: Apr 11, 2016 at 11:38 PM
 -- Server version: 5.5.47-0ubuntu0.14.04.1
 -- PHP Version: 5.5.9-1ubuntu4.14
 
@@ -37,14 +37,16 @@ CREATE TABLE IF NOT EXISTS `bid` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `dilevery`
+-- Table structure for table `delivery`
 --
 
-CREATE TABLE IF NOT EXISTS `dilevery` (
+CREATE TABLE IF NOT EXISTS `delivery` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `order` text NOT NULL,
-  `address` text NOT NULL,
   `status` varchar(50) NOT NULL,
+  `latitude` decimal(23,20) NOT NULL DEFAULT '40.24444400000000000000',
+  `longitude` decimal(23,20) NOT NULL DEFAULT '-111.66083300000000000000',
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
@@ -68,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `driver` (
 -- Constraints for table `bid`
 --
 ALTER TABLE `bid`
-  ADD CONSTRAINT `bid_ibfk_1` FOREIGN KEY (`delivery_id`) REFERENCES `dilevery` (`id`);
+  ADD CONSTRAINT `bid_ibfk_1` FOREIGN KEY (`delivery_id`) REFERENCES `delivery` (`id`);
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
