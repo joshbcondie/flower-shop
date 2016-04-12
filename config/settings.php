@@ -4,7 +4,7 @@
 function loadClass($class_name) {
     $path = $_SERVER['DOCUMENT_ROOT'] . '/flower-shop/classes/' . $class_name . '.php';
 
-    error_log('[settings][loadClass]::$path: ' . print_r($path, true));
+//    error_log('[settings][loadClass]::$path: ' . print_r($path, true));
 
     if (file_exists($path)) {
         require_once($path);

@@ -12,7 +12,7 @@ class Driver
         $eslQuery = 'SELECT ESL FROM driver';
         $stmt = Database::getDB()->prepare($eslQuery);
         $stmt->execute();
-        $ESLs = Database::getDB()->fetchAll(PDO::FETCH_ASSOC);
+        $ESLs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return $ESLs;
     }

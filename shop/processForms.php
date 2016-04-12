@@ -6,9 +6,12 @@
  * Time: 9:50 AM
  */
 
+require_once($_SERVER['DOCUMENT_ROOT'] . '/flower-shop/config/settings.php');
+
+
 $form = $_REQUEST['form'];
 
-error_log('[processForm.php]::$form: ' . print_r($form, true));
+//error_log('[processForm.php]::$form: ' . print_r($form, true));
 
 echo $form();
 

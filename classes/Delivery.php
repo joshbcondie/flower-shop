@@ -13,10 +13,10 @@ class Delivery
     const STATUS_COMPLETE = 'STATUS_COMPLETE';
 
     public static function createDeliveryRequest($order, $latitude, $longitude) {
-        $createDeliveryRequestSQL = 'INSERT INTO delivery (order, latitude, longitude, status)
-                                     VALUES (:order, :latitude, :longitude, :status)';
+        $createDeliveryRequestSQL = 'INSERT INTO delivery (order_details, latitude, longitude, status)
+                                     VALUES (:order_details, :latitude, :longitude, :status)';
         $stmt = Database::getDB()->prepare($createDeliveryRequestSQL);
-        $stmt->bindParam('order', $order);
+        $stmt->bindParam('order_details', $order);
         $stmt->bindParam('latitude', $latitude);
         $stmt->bindParam('longitude', $longitude);
         $stmt->bindValue('status', self::STATUS_PENDING);
@@ -29,7 +29,7 @@ class Delivery
     }
     
     public static function getDelivery($deliveryId) {
-        $deliveryDetailsSQL = 'SELECT id, order, latitude, longitude, status, timestamp
+        $deliveryDetailsSQL = 'SELECT id, order_details, latitude, longitude, status, timestamp
                                FROM delivery
                                WHERE id = :deliveryId';
         $stmt = Database::getDB()->prepare($deliveryDetailsSQL);
@@ -51,18 +51,18 @@ class Delivery
                 '_domain' => 'rfq',
                 '_name' => 'delivery_ready',
                 'order_id' => $deliveryDetails['id'],
-                'order' => $deliveryDetails['order'],
+                'order_details' => $deliveryDetails['order_details'],
                 'latitude' => $deliveryDetails['latitude'],
                 'longitude' => $deliveryDetails['longitude'],
                 'order_time' => $deliveryDetails['timestamp'],
             );
 
-            self::sendEvent($ESL, $event);
+            self::sendEvent($ESL['ESL'], $event);
         }
     }
 
     private static function sendEvent($ESL, $eventData) {
-//        error_log('[' . __CLASS__ . '][' . __FUNCTION__ . ']::$url ' . print_r($url, true));
+//        error_log('[' . __CLASS__ . '][' . __FUNCTION__ . ']::$ESL ' . print_r($ESL, true));
         $parsedURL = parse_url($ESL);
 //        error_log('[' . __CLASS__ . '][' . __FUNCTION__ . ']::$parsedURL ' . print_r($parsedURL, true));
         $url = '';
