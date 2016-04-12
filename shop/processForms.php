@@ -33,9 +33,15 @@ function register_deliver()
 
 function create_delivery_request()
 {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        return "POST " . print_r($_POST, true);
-    } else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        return "GET " . print_r($_GET, true);
-    }
+//    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+//        return "POST " . print_r($_POST, true);
+//    } else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+//        return "GET " . print_r($_GET, true);
+//    }
+
+    $order = $_REQUEST['order'];
+    $latitude = $_REQUEST['latitude'];
+    $longitude = $_REQUEST['longitude'];
+
+    Delivery::createDeliveryRequest($order, $latitude, $longitude);
 }

@@ -13,7 +13,8 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/flower-shop/config/settings.php');
 <body>
 <form method="post" action="processForms.php?form=create_delivery_request">
     <label>Order: <input name="order" type="text"></label>
-    <label>Address: <input name="address" type="text"></label>
+    <label>Latitude: <input name="latitude" type="text"></label>
+    <label>Longitude: <input name="longitude" type="text"></label>
     <input type="submit" value="Register">
 </form>
 </body>
