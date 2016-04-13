@@ -25,13 +25,9 @@ function register_deliver()
 
     $esl = $_REQUEST['ESL'];
 
-    $insertEslQuery = 'INSERT INTO driver(ESL) VALUES(:ESL)';
-    $stmt = Database::getDB()->prepare($insertEslQuery);
-    $stmt->bindValue('ESL', $esl);
-    $stmt->execute();
-    $driverId = Database::getDB()->lastInsertId();
-
-    return $driverId;
+    $driverId = Driver::addESL($esl);
+    
+    echo("Success! ESL = $esl, id = $driverId");
 }
 
 function create_delivery_request()
@@ -43,8 +39,20 @@ function create_delivery_request()
 //    }
 
     $order = $_REQUEST['order'];
+    $address = $_REQUEST['address'];
     $latitude = $_REQUEST['latitude'];
     $longitude = $_REQUEST['longitude'];
 
-    Delivery::createDeliveryRequest($order, $latitude, $longitude);
+    Delivery::createDeliveryRequest($order, $address, $latitude, $longitude);
+    
+    header('Location: manageDeliveries.php');
+}
+
+function accept_bid()
+{
+    $bidId = $_REQUEST['bid_id'];
+
+    Delivery::acceptBid($bidId);
+
+    header('Location: manageDeliveries.php');
 }

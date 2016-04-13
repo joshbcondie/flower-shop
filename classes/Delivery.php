@@ -9,14 +9,17 @@
 class Delivery
 {
     const STATUS_PENDING = 'STATUS_PENDING';
+    const STATUS_BID_RECEIVED = 'STATUS_BID_RECEIVED';
     const STATUS_BID_ACCEPTED = 'STATUS_BID_ACCEPTED';
+    const STATUS_BID_REJECTED = 'STATUS_BID_REJECTED';
     const STATUS_COMPLETE = 'STATUS_COMPLETE';
 
-    public static function createDeliveryRequest($order, $latitude, $longitude) {
-        $createDeliveryRequestSQL = 'INSERT INTO delivery (order_details, latitude, longitude, status)
-                                     VALUES (:order_details, :latitude, :longitude, :status)';
+    public static function createDeliveryRequest($order, $address, $latitude, $longitude) {
+        $createDeliveryRequestSQL = 'INSERT INTO delivery (order_details, address, latitude, longitude, status)
+                                     VALUES (:order_details, address, :latitude, :longitude, :status)';
         $stmt = Database::getDB()->prepare($createDeliveryRequestSQL);
         $stmt->bindParam('order_details', $order);
+        $stmt->bindParam('address', $address);
         $stmt->bindParam('latitude', $latitude);
         $stmt->bindParam('longitude', $longitude);
         $stmt->bindValue('status', self::STATUS_PENDING);
@@ -29,7 +32,7 @@ class Delivery
     }
     
     public static function getDelivery($deliveryId) {
-        $deliveryDetailsSQL = 'SELECT id, order_details, latitude, longitude, status, timestamp
+        $deliveryDetailsSQL = 'SELECT id, order_details, address, latitude, longitude, status, timestamp
                                FROM delivery
                                WHERE id = :deliveryId';
         $stmt = Database::getDB()->prepare($deliveryDetailsSQL);
@@ -37,9 +40,84 @@ class Delivery
         $stmt->execute();
         
         $deliveryDetails = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $bidSQL = 'SELECT id, driver_name, estimated_time, status
+                   FROM bid
+                   WHERE delivery_id = :deliveryId';
+        $stmt = Database::getDB()->prepare($bidSQL);
+        $stmt->bindParam('deliveryId', $deliveryId);
+        $stmt->execute();
+
+        $bids = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $deliveryDetails['bids'] = $bids;
         
         return $deliveryDetails;
         
+    }
+
+    public static function getDeliveries() {
+        $deliveryDetailsSQL = 'SELECT id, order_details, address, latitude, longitude, status, timestamp
+                               FROM delivery
+                               WHERE 1';
+        $stmt = Database::getDB()->prepare($deliveryDetailsSQL);
+        $stmt->bindParam('deliveryId', $deliveryId);
+        $stmt->execute();
+
+        $deliveries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $deliveries;
+    }
+
+    public static function makeBid($deliveryId, $driverName, $estimatedTime) {
+        $createBidSQL = 'INSERT INTO bid (delivery_id, driver_name, estimated_time, status)
+                         VALUES (:delivery_id, :driver_name, :estimated_time, :status)';
+        $stmt = Database::getDB()->prepare($createBidSQL);
+        $stmt->bindParam('delivery_id', $deliveryId);
+        $stmt->bindParam('driver_name', $driverName);
+        $stmt->bindParam('estimated_time', $estimatedTime);
+        $stmt->bindValue('status', self::STATUS_PENDING);
+        $stmt->execute();
+
+        self::updateDeliveryStatus($deliveryId, self::STATUS_BID_RECEIVED);
+    }
+
+    public static function acceptBid($bidId) {
+        $deliveryIdSQL = 'SELECT delivery_id FROM bid WHERE id = :bidId';
+        $stmt = Database::getDB()->prepare($deliveryIdSQL);
+        $stmt->bindParam('bidId', $bidId);
+        $stmt->execute();
+
+        $deliveryId = $stmt->fetch(PDO::FETCH_ASSOC);
+//        error_log('[Delivery.php]::$deliveryId: ' . print_r($deliveryId, true));
+        $deliveryId = $deliveryId['delivery_id'];
+
+        $updateBidStatusSQL = 'UPDATE bid
+                               SET status = :status
+                               WHERE delivery_id = :deliveryId';
+        $stmt = Database::getDB()->prepare($updateBidStatusSQL);
+        $stmt->bindValue('status', self::STATUS_BID_REJECTED);
+        $stmt->bindParam('deliveryId', $deliveryId);
+        $stmt->execute();
+        
+        $updateBidStatusSQL = 'UPDATE bid
+                               SET status = :status
+                               WHERE id = :bidId';
+        $stmt = Database::getDB()->prepare($updateBidStatusSQL);
+        $stmt->bindParam('bidId', $bidId);
+        $stmt->bindValue('status', self::STATUS_BID_ACCEPTED);
+        $stmt->execute();
+
+        self::updateDeliveryStatus($deliveryId, self::STATUS_BID_ACCEPTED);
+    }
+
+    public static function updateDeliveryStatus($deliveryId, $status) {
+        $updateDeliveryStatusSQL = 'UPDATE delivery
+                                    SET status = :status
+                                    WHERE id = :deliveryId';
+        $stmt = Database::getDB()->prepare($updateDeliveryStatusSQL);
+        $stmt->bindParam('status', $status);
+        $stmt->bindParam('deliveryId', $deliveryId);
+        $stmt->execute();
     }
     
     public static function broadcastRequestForDelivery($deliveryId) {
@@ -52,6 +130,7 @@ class Delivery
                 '_name' => 'delivery_ready',
                 'order_id' => $deliveryDetails['id'],
                 'order_details' => $deliveryDetails['order_details'],
+                'address' => $deliveryDetails['address'],
                 'latitude' => $deliveryDetails['latitude'],
                 'longitude' => $deliveryDetails['longitude'],
                 'order_time' => $deliveryDetails['timestamp'],
@@ -98,6 +177,7 @@ class Delivery
 
         return $result;
     }
+    
     private static function unparseUrl($parsed_url) {
         $scheme   = isset($parsed_url['scheme']) ? $parsed_url['scheme'] . '://' : '';
         $host     = isset($parsed_url['host']) ? $parsed_url['host'] : '';

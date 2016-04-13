@@ -16,6 +16,9 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/flower-shop/config/settings.php');
         <label>Order: <input name="order" type="text"></label>
     </div>
     <div>
+        <label>Address: <input name="address" type="text"></label>
+    </div>
+    <div>
         <label>Latitude: <input name="latitude" type="text"></label>
     </div>
     <div>
