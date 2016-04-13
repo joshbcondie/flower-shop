@@ -4,6 +4,10 @@
     $mph = 30;
     $post = json_decode(file_get_contents('php://input'), true);
     
+    function append_event($url, $param) {
+        return strpos($url, '?') === false ? $url . '?event=' . $param : $url . '&event=' . $param;
+    }
+    
     function distance($latitude1, $longitude1, $latitude2, $longitude2) {
         $earth_radius = 6371;
 
@@ -36,23 +40,39 @@
     if (isset($_GET['event'])) {
         switch ($_GET['event']) {
             case 'new_text':
-                $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
+                if (!isset($_POST['Body']))
+                    break;
                 
-                $stmt = $conn->prepare('SELECT * FROM driver');
-                $stmt->execute();
-                $driver = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
+                if (strcasecmp(trim($_POST['Body']), 'bid anyway') === 0) {
+                    
+                    $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
                 
-                $conn->close();
-                
-                if (strcasecmp(trim($_POST['Body']), "bid anyway") === 0) {
+                    $stmt = $conn->prepare('SELECT * FROM driver');
+                    $stmt->execute();
+                    $driver = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                    
+                    $stmt = $conn->prepare('
+                        SELECT delivery.id AS id, 
+                                shop.url AS shop_url, 
+                                delivery.estimated_time AS estimated_time, 
+                                delivery.timestamp AS timestamp
+                        FROM delivery 
+                        INNER JOIN shop ON delivery.shop_id = shop.id
+                        ORDER BY timestamp DESC LIMIT 1 
+                    ');
+                    $stmt->execute();
+                    $delivery = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                    
+                    $conn->close();
+                    
                     $content = json_encode(array(
-                        'event' => 'bid_available',
-                        'delivery_id' => $driver['last_delivery_id'],
+                        'delivery_id' => $delivery['id'],
                         'driver_name' => $driver['name'],
-                        'estimated_time' => floatval($driver['last_estimated_time'])
+                        'estimated_time' => floatval($delivery['estimated_time'])
                     ));
-                    $curl = curl_init($driver['last_shop_url']);
+                    $curl = curl_init(append_event($delivery['shop_url'], 'bid_available'));
                     curl_setopt($curl, CURLOPT_HEADER, false);
                     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
@@ -61,6 +81,45 @@
                     curl_exec($curl);
                     curl_close($curl);
                 }
+                else if (strcasecmp(trim($_POST['Body']), 'delivery complete') === 0) {
+                    
+                    $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
+                                    
+                    $stmt = $conn->prepare('SELECT * FROM driver');
+                    $stmt->execute();
+                    $driver = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                    
+                    $stmt = $conn->prepare('
+                        SELECT driver.name AS driver_name, 
+                                delivery.id AS id, 
+                                shop.url AS shop_url 
+                        FROM delivery 
+                        INNER JOIN shop ON delivery.shop_id = shop.id 
+                        INNER JOIN driver ON delivery.id = driver.delivery_id
+                    ');
+                    $stmt->execute();
+                    $delivery = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                    
+                    $conn->query('UPDATE driver SET status = \'AVAILABLE\', delivery_id=\'\'');
+                    
+                    $conn->close();
+                    
+                    $content = json_encode(array(
+                        'id' => $delivery['id'],
+                        'driver_name' => $delivery['driver_name']
+                    ));
+                    $curl = curl_init(append_event($delivery['shop_url'], 'delivery_complete'));
+                    curl_setopt($curl, CURLOPT_HEADER, false);
+                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+                    curl_setopt($curl, CURLOPT_POST, true);
+                    curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
+                    curl_exec($curl);
+                    curl_close($curl);
+                }
+                
                 break;
             case 'registration':
                 if (!isset($post['client_id']) || !isset($post['client_secret']) || !isset($post['account_sid']) || !isset($post['auth_token']) || !isset($post['phone']))
@@ -133,25 +192,36 @@
                 
                 $conn->close();
                 
+                if ($driver['status'] !== 'AVAILABLE')
+                    break;
+                
                 $distance_to_shop = distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($driver['latitude']), floatval($driver['longitude']));
                 $distance_to_recipient = distance(floatval($shop['latitude']), floatval($shop['longitude']), floatval($post['latitude']), floatval($post['longitude']));
-                $distance = $distance_to_shop + $distance_to_recipient;
+                $distance = round($distance_to_shop + $distance_to_recipient, 2);
                 $estimated_time = round($distance * 60 / $mph, 2);
+                
+                $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
+                    
+                $stmt = $conn->prepare('INSERT INTO delivery (id, shop_id, address, distance, estimated_time) VALUES (?, ?, ?, ?, ?)');
+                $stmt->bind_param('sssdd', $post['id'], $_GET['shop_id'], $post['address'], $distance, $estimated_time);
+                $stmt->execute();
+                $stmt->close();
+                
+                $conn->close();
                 
                 $text_content = 'Flower shop: ' . $shop['name'] . "\n";
                 $text_content .= 'Address: ' . $shop['address'] . "\n";
                 $text_content .= 'Recipient address: ' . $post['address'] . "\n";
-                $text_content .= 'Distance: ' . round($distance, 2) . " miles\n";
+                $text_content .= 'Distance: ' . $distance . " miles\n";
                 $text_content .= 'Estimated time: ' . $estimated_time . " minutes\n";
                 
                 if ($distance_to_shop <= $max_miles) {
                     $content = json_encode(array(
-                        'event' => 'bid_available',
                         'delivery_id' => $post['id'],
                         'driver_name' => $driver['name'],
                         'estimated_time' => $estimated_time
                     ));
-                    $curl = curl_init($shop['url']);
+                    $curl = curl_init(append_event($shop['url'], 'bid_available'));
                     curl_setopt($curl, CURLOPT_HEADER, false);
                     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
@@ -163,16 +233,7 @@
                     $text_content .= 'Bid made automatically';
                 }
                 else {
-                    $text_content .= 'Bid anyway?';
-                    
-                    $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
-                    
-                    $stmt = $conn->prepare('UPDATE driver SET last_delivery_id = ?, last_shop_url = ?, last_estimated_time = ?');
-                    $stmt->bind_param('ssd', $post['id'], $shop['url'], $estimated_time);
-                    $stmt->execute();
-                    $stmt->close();
-                    
-                    $conn->close();
+                    $text_content .= 'Text "bid anyway" to bid.';
                 }
                 
                 $curl = curl_init('https://api.twilio.com/2010-04-01/Accounts/' . $oauth['account_sid'] . '/Messages.json');
@@ -203,12 +264,68 @@
                 $conn->close();
                 
                 $result = json_encode(array(
-                    'esl' => $url . '?event=delivery_ready&shop_id=' . $id
+                    'esl' => $url . '?shop_id=' . $id
                 ));
                 echo $result;
                 break;
             case 'bid_awarded':
-                echo 'new flower shop';
+                if (!isset($post['id']))
+                    break;
+                
+                $conn = new mysqli('localhost', 'driver', 'driver', 'driver');
+                
+                $stmt = $conn->prepare('UPDATE driver SET status = \'BUSY\', delivery_id = ?');
+                $stmt->bind_param('s', $post['id']);
+                $stmt->execute();
+                $stmt->close();
+                
+                $stmt = $conn->prepare('
+                    SELECT shop.name AS shop_name, 
+                            shop.address AS shop_address,
+                            delivery.address AS recipient_address, 
+                            delivery.distance AS distance,
+                            delivery.estimated_time AS estimated_time 
+                    FROM delivery 
+                    INNER JOIN shop ON delivery.shop_id = shop.id 
+                    WHERE delivery.id = ?
+                ');
+                $stmt->bind_param('s', $post['id']);
+                $stmt->execute();
+                $delivery = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                
+                $stmt = $conn->prepare('SELECT * FROM driver');
+                $stmt->execute();
+                $driver = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                
+                $stmt = $conn->prepare('SELECT * FROM oauth');
+                $stmt->execute();
+                $oauth = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                
+                $conn->close();
+                
+                $text_content = "BID AWARDED\n";
+                $text_content .= 'Flower shop: ' . $delivery['shop_name'] . "\n";
+                $text_content .= 'Address: ' . $delivery['shop_address'] . "\n";
+                $text_content .= 'Recipient address: ' . $delivery['recipient_address'] . "\n";
+                $text_content .= 'Distance: ' . $delivery['distance'] . " miles\n";
+                $text_content .= 'Estimated time: ' . $delivery['estimated_time'] . " minutes\n";
+                $text_content .= 'Text "delivery complete" when finished.';
+                
+                $curl = curl_init('https://api.twilio.com/2010-04-01/Accounts/' . $oauth['account_sid'] . '/Messages.json');
+                curl_setopt($curl, CURLOPT_HEADER, false);
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-type: application/x-www-form-urlencoded'));
+                curl_setopt($curl, CURLOPT_POST, true);
+                curl_setopt($curl, CURLOPT_POSTFIELDS, 'From=' . $oauth['phone'] . '&To=' . $driver['phone'] . '=&Body=' . urlencode($text_content));
+                curl_setopt($curl, CURLOPT_USERPWD, $oauth['account_sid'] . ':' . $oauth['auth_token']);
+                curl_exec($curl);
+                curl_close($curl);
+                
+                echo 'bid awarded';
                 break;
         }
     }

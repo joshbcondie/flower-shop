@@ -3,6 +3,7 @@
     
     $conn->query('DROP TABLE IF EXISTS shop');
     $conn->query('DROP TABLE IF EXISTS driver');
+    $conn->query('DROP TABLE IF EXISTS delivery');
     $conn->query('DROP TABLE IF EXISTS oauth');
     
     $conn->query('CREATE TABLE shop (
@@ -21,11 +22,19 @@
         latitude DECIMAL(23, 20) NOT NULL DEFAULT 40.244444,
         longitude DECIMAL(23, 20) NOT NULL DEFAULT -111.660833,
         token VARCHAR(60) NOT NULL,
-        last_delivery_id VARCHAR(60) NOT NULL,
-        last_shop_url VARCHAR(600) NOT NULL,
-        last_estimated_time DECIMAL(7, 2) NOT NULL
+        status VARCHAR(50) NOT NULL DEFAULT \'AVAILABLE\',
+        delivery_id VARCHAR(60) NOT NULL
     )');
     $conn->query('INSERT INTO driver () VALUES ()');
+    
+    $conn->query('CREATE TABLE delivery (
+        id VARCHAR(60) PRIMARY KEY,
+        shop_id VARCHAR(10) NOT NULL REFERENCES shop,
+        address VARCHAR(200) NOT NULL,
+        distance DECIMAL(7, 2) NOT NULL,
+        estimated_time DECIMAL(7, 2) NOT NULL,
+        timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )');
     
     $conn->query('CREATE TABLE oauth(
         id INTEGER PRIMARY KEY DEFAULT 0,
