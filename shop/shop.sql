@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Apr 11, 2016 at 11:38 PM
+-- Generation Time: Apr 13, 2016 at 03:39 AM
 -- Server version: 5.5.47-0ubuntu0.14.04.1
 -- PHP Version: 5.5.9-1ubuntu4.14
 
@@ -29,10 +29,12 @@ SET time_zone = "+00:00";
 CREATE TABLE IF NOT EXISTS `bid` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `delivery_id` int(10) unsigned NOT NULL,
+  `driver_name` text NOT NULL,
+  `estimated_time` text NOT NULL,
   `status` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `delivery_id` (`delivery_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
 
 -- --------------------------------------------------------
 
@@ -42,13 +44,14 @@ CREATE TABLE IF NOT EXISTS `bid` (
 
 CREATE TABLE IF NOT EXISTS `delivery` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `order` text NOT NULL,
+  `order_details` text NOT NULL,
   `status` varchar(50) NOT NULL,
-  `latitude` decimal(23,20) NOT NULL DEFAULT '40.24444400000000000000',
-  `longitude` decimal(23,20) NOT NULL DEFAULT '-111.66083300000000000000',
+  `address` text NOT NULL,
+  `latitude` decimal(23,20) NOT NULL DEFAULT '40.25813500000000000000',
+  `longitude` decimal(23,20) NOT NULL DEFAULT '-111.67160100000000000000',
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9 ;
 
 -- --------------------------------------------------------
 
@@ -60,7 +63,7 @@ CREATE TABLE IF NOT EXISTS `driver` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `ESL` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 --
 -- Constraints for dumped tables
